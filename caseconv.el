@@ -19,6 +19,7 @@
 ;;
 ;;; Code:
 
+
 (defgroup caseconv nil
   "Minor mode for changing cases"
   :group 'tools)
@@ -48,6 +49,25 @@ If nil, this value will not be modified, though this package may not work right!
    ((string-match-p caseconv--snake-case-pattern str) 'snake)
    )
   )
+
+(defun caseconv--split-on-different-case (str)
+  "Breaks up a PascalCase or camelCase string into a list of strings"
+  (let ((str-list '())
+        (current-str (substring str 0 1))
+        (index 1))
+        (while (<= index (length str))
+          (let ((current-char (substring str (- index 1) index)))
+            (unless (= index 1)
+              (let ((last-char (substring str (- index 2) (- index 1))))
+                (cond
+                 ((and (s-capitalized? current-char) (not (s-capitalized? last-char))) (progn
+                                                                                         (setq str-list (cons current-str str-list))
+                                                                                         (setq current-str current-char)))
+                 ((and (s-capitalized? last-char) (not (s-capitalized? current-char))) (setq current-str (concat current-str current-char)))
+                 (t (setq current-str (concat current-str current-char)))))))
+          (setq index (+ 1 index)))
+        (setq str-list (cons current-str str-list))
+        (reverse str-list)))
 
 (provide 'caseconv)
 ;;; caseconv.el ends here
