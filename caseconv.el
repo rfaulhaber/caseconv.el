@@ -24,10 +24,6 @@
   "Minor mode for changing cases"
   :group 'tools)
 
-(defvar caseconv-modify-case-fold-search t
-  "Tells caseconv whether or not it can modify the 'case-fold-search' value.
-If nil, this value will not be modified, though this package may not work right!")
-
 (defconst caseconv--pascal-case-pattern
   (rx bol (one-or-more (any "A-Z") (one-or-more (in "a-z0-9"))) eol))
 (defconst caseconv--snake-case-pattern
@@ -43,15 +39,14 @@ If nil, this value will not be modified, though this package may not work right!
 
 (defun caseconv--determine-case (str)
   "Determines case type of STR. Splits string appropriately, returning a list of words."
-  (cond
-   ((string-match-p caseconv--pascal-case-pattern str) (split-string str ""))
-   ((string-match-p caseconv--snake-case-pattern str) 'snake)
-   ((string-match-p caseconv--snake-case-pattern str) 'snake)
-   )
-  )
+  (let ((case-fold-search nil))
+    (cond
+      ((string-match-p caseconv--pascal-case-pattern str) (split-string str ""))
+      ((string-match-p caseconv--snake-case-pattern str) 'snake)
+      ((string-match-p caseconv--snake-case-pattern str) 'snake))))
 
 (defun caseconv--split-on-different-case (str)
-  "Breaks up a PascalCase or camelCase string into a list of strings"
+  "Breaks up a PascalCase or camelCase STR into a list of strings"
   (let ((str-list '())
         (current-str (substring str 0 1))
         (index 1))
@@ -60,11 +55,14 @@ If nil, this value will not be modified, though this package may not work right!
             (unless (= index 1)
               (let ((last-char (substring str (- index 2) (- index 1))))
                 (cond
-                 ((and (s-capitalized? current-char) (not (s-capitalized? last-char))) (progn
-                                                                                         (setq str-list (cons current-str str-list))
-                                                                                         (setq current-str current-char)))
-                 ((and (s-capitalized? last-char) (not (s-capitalized? current-char))) (setq current-str (concat current-str current-char)))
-                 (t (setq current-str (concat current-str current-char)))))))
+                 ((and (s-capitalized? current-char) (not (s-capitalized? last-char)))
+                  (progn
+                    (setq str-list (cons current-str str-list))
+                    (setq current-str current-char)))
+                 ((and (s-capitalized? last-char) (not (s-capitalized? current-char)))
+                  (setq current-str (concat current-str current-char)))
+                  (t
+                    (setq current-str (concat current-str current-char)))))))
           (setq index (+ 1 index)))
         (setq str-list (cons current-str str-list))
         (reverse str-list)))
