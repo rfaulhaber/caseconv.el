@@ -1,0 +1,12 @@
+#+TITLE: caseconv.el
+
+An Emacs package providing functions to change word case.
+
+=caseconv= provides functions converting to and from:
+
+- camelCase
+- PascalCase
+- snake_case
+- kebab-case
+- SCREAMING_SNAKE_CASE
+- SCREAMING_KEBAB_CASE
