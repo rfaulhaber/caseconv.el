@@ -3,19 +3,28 @@
 ;; Copyright (C) 2020 Ryan Faulhaber
 ;;
 ;; Author: Ryan Faulhaber <http://github.com/rfaulhaber>
-;; Maintainer: Ryan Faulhaber <ryan@sys9.net>
-;; Created: July 15, 2020
-;; Modified: July 15, 2020
-;; Version: 0.0.1
+;; Maintainer: Ryan Faulhaber <ryf@sent.as>
+;; Created: October 26, 2020
+;; Modified: October 26, 2020
+;; Version: 0.1.0
 ;; Keywords:
 ;; Homepage: https://github.com/rfaulhaber/caseconv
-;; Package-Requires: ((emacs 26.3) (cl-lib "0.5"))
+;; Package-Requires: ((emacs 26.3))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
 ;;
-;;  description
+;;  This package provides both interactive and non-interactive Lisp functions
+;;  for converting between six different types of "cases":
+;;
+;; - camelCase
+;; - PascalCase
+;; - kebab-case
+;; - snake_case
+;; - SCREAMING_SNAKE_CASE
+;; - SCREAMING-KEBAB-CASE
+;;
 ;;
 ;;; Code:
 
@@ -35,15 +44,7 @@
 (defconst caseconv--kebab-case-pattern
   (rx bol (one-or-more (in "a-z?!/")) (zero-or-more "-" (one-or-more (in "a-z0-9"))) eol))
 (defconst caseconv--screaming-kebab-case-pattern
-  (rx bol (one-or-more (in "a-z?!/")) (zero-or-more "-" (one-or-more (in "a-z0-9"))) eol))
-
-(defun caseconv--determine-case (str)
-  "Determines case type of STR. Splits string appropriately, returning a list of words."
-  (let ((case-fold-search nil))
-    (cond
-      ((string-match-p caseconv--pascal-case-pattern str) (split-string str ""))
-      ((string-match-p caseconv--snake-case-pattern str) 'snake)
-      ((string-match-p caseconv--snake-case-pattern str) 'snake))))
+  (rx bol (one-or-more (in "A-Z?!/")) (zero-or-more "-" (one-or-more (in "A-Z0-9"))) eol))
 
 (defun caseconv--split-on-different-case (str)
   "Breaks up a PascalCase or camelCase STR into a list of strings"
@@ -66,6 +67,93 @@
           (setq index (+ 1 index)))
         (setq str-list (cons current-str str-list))
         (reverse str-list)))
+
+(defun caseconv--determine-case (str)
+  "Determines case type of STR. Splits string appropriately, returning a list of words."
+  (let ((case-fold-search nil))
+    (cond
+      ((string-match-p caseconv--pascal-case-pattern str) (caseconv--split-on-different-case str))
+      ((string-match-p caseconv--snake-case-pattern str) (split-string str "_"))
+      ((string-match-p caseconv--camel-case-pattern str) (caseconv--split-on-different-case str))
+      ((string-match-p caseconv--screaming-snake-case-pattern str) (split-string str "_"))
+      ((string-match-p caseconv--kebab-case-pattern str) (split-string str "-"))
+      ((string-match-p caseconv--screaming-kebab-case-pattern str) (split-string str "-"))
+      (nil nil)
+    )))
+
+(defun caseconv--bounds-of-word ()
+  (let* ((start (point))
+          (word (current-word))
+          (end (+ start (length word))))
+       (cons start end)))
+
+(defun caseconv--get-bounds-of-word ()
+  "Gets bounds of THING at cursor."
+  (let* ((bounds (if (use-region-p)
+                     (cons (region-beginning) (region-end))
+                   (caseconv--bounds-of-word)))
+         (text (string-trim-left (buffer-substring-no-properties (car bounds) (cdr bounds))))
+         (start (car bounds))
+         (end (cdr bounds)))
+    (list 'text text 'start start 'end end)))
+
+(defun caseconv--lower-first (word)
+  (concat (downcase (substring word 0 1)) (substring word 1)))
+
+(defun caseconv-to-pascal-case (word)
+  (let ((word-list (caseconv--determine-case word)))
+        (mapconcat 'capitalize word-list "")))
+
+(defun caseconv-to-camel-case (word)
+  (let ((word-list (caseconv--determine-case word)))
+    (caseconv--lower-first (mapconcat 'capitalize word-list ""))))
+
+(defun caseconv-to-snake-case (word)
+  (let ((word-list (caseconv--determine-case word)))
+    (mapconcat 'caseconv--lower-first word-list "_")))
+
+(defun caseconv-to-kebab-case (word)
+  (let ((word-list (caseconv--determine-case word)))
+  (mapconcat 'caseconv--lower-first word-list "-")))
+
+(defun caseconv-to-screaming-snake-case (word)
+  (upcase (caseconv-to-snake-case word)))
+
+(defun caseconv-to-screaming-kebab-case (word)
+  (upcase (caseconv-to-kebab-case word)))
+
+(defun caseconv--point-or-region-to-case (new-case)
+  (let* ((word-info (caseconv--get-bounds-of-word))
+         (word (plist-get word-info 'text))
+         (start (plist-get word-info 'start))
+         (end (plist-get word-info 'end))
+         (result (funcall new-case word)))
+    (delete-region start end)
+    (insert result)))
+
+(defun caseconv-point-or-region-to-pascal-case ()
+  (interactive)
+  (caseconv--point-or-region-to-case 'caseconv-to-pascal-case))
+
+(defun caseconv-point-or-region-to-camel-case ()
+  (interactive)
+  (caseconv--point-or-region-to-case 'caseconv-to-camel-case))
+
+(defun caseconv-point-or-region-to-snake-case ()
+  (interactive)
+  (caseconv--point-or-region-to-case 'caseconv-to-snake-case))
+
+(defun caseconv-point-or-region-to-screaming-snake-case ()
+  (interactive)
+  (caseconv--point-or-region-to-case 'caseconv-to-screaming-snake-case))
+
+(defun caseconv-point-or-region-to-kebab-case ()
+  (interactive)
+  (caseconv--point-or-region-to-case 'caseconv-to-kebab-case))
+
+(defun caseconv-point-or-region-to-screaming-kebab-case ()
+  (interactive)
+  (caseconv--point-or-region-to-case 'caseconv-to-screaming-kebab-case))
 
 (provide 'caseconv)
 ;;; caseconv.el ends here
