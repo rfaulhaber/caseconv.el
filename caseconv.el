@@ -9,7 +9,7 @@
 ;; Version: 0.1.0
 ;; Keywords:
 ;; Homepage: https://github.com/rfaulhaber/caseconv
-;; Package-Requires: ((emacs 26.3))
+;; Package-Requires: ((emacs "24.4") s subr-x)
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -28,6 +28,8 @@
 ;;
 ;;; Code:
 
+(require 's)
+(require 'subr-x)
 
 (defgroup caseconv nil
   "Minor mode for changing cases"
@@ -46,46 +48,54 @@
 (defconst caseconv--screaming-kebab-case-pattern
   (rx bol (one-or-more (in "A-Z?!/")) (zero-or-more "-" (one-or-more (in "A-Z0-9"))) eol))
 
+(defconst caseconv--case-options `(("PascalCase" . caseconv-to-pascal-case)
+                                   ("camelCase" . caseconv-to-camel-case)
+                                   ("snake_case" . caseconv-to-snake-case)
+                                   ("SCREAMING_SNAKE_CASE" . caseconv-to-screaming-snake-case)
+                                   ("kebab-case" . caseconv-to-kebab-case)
+                                   ("SCREAMING-KEBAB-CASE" . caseconv-to-screaming-kebab-case))
+  "Alist of case names and their mapping functions.")
+
 (defun caseconv--split-on-different-case (str)
-  "Breaks up a PascalCase or camelCase STR into a list of strings"
+  "Breaks up a PascalCase or camelCase STR into a list of strings."
   (let ((str-list '())
         (current-str (substring str 0 1))
         (index 1))
-        (while (<= index (length str))
-          (let ((current-char (substring str (- index 1) index)))
-            (unless (= index 1)
-              (let ((last-char (substring str (- index 2) (- index 1))))
-                (cond
-                 ((and (s-capitalized? current-char) (not (s-capitalized? last-char)))
-                  (progn
-                    (setq str-list (cons current-str str-list))
-                    (setq current-str current-char)))
-                 ((and (s-capitalized? last-char) (not (s-capitalized? current-char)))
-                  (setq current-str (concat current-str current-char)))
-                  (t
-                    (setq current-str (concat current-str current-char)))))))
-          (setq index (+ 1 index)))
-        (setq str-list (cons current-str str-list))
-        (reverse str-list)))
+    (while (<= index (length str))
+      (let ((current-char (substring str (- index 1) index)))
+        (unless (= index 1)
+          (let ((last-char (substring str (- index 2) (- index 1))))
+            (cond
+             ((and (s-capitalized? current-char) (not (s-capitalized? last-char)))
+              (progn
+                (setq str-list (cons current-str str-list))
+                (setq current-str current-char)))
+             ((and (s-capitalized? last-char) (not (s-capitalized? current-char)))
+              (setq current-str (concat current-str current-char)))
+             (t
+              (setq current-str (concat current-str current-char)))))))
+      (setq index (+ 1 index)))
+    (setq str-list (cons current-str str-list))
+    (reverse str-list)))
 
 (defun caseconv--determine-case (str)
   "Determines case type of STR. Splits string appropriately, returning a list of words."
   (let ((case-fold-search nil))
     (cond
-      ((string-match-p caseconv--pascal-case-pattern str) (caseconv--split-on-different-case str))
-      ((string-match-p caseconv--snake-case-pattern str) (split-string str "_"))
-      ((string-match-p caseconv--camel-case-pattern str) (caseconv--split-on-different-case str))
-      ((string-match-p caseconv--screaming-snake-case-pattern str) (split-string str "_"))
-      ((string-match-p caseconv--kebab-case-pattern str) (split-string str "-"))
-      ((string-match-p caseconv--screaming-kebab-case-pattern str) (split-string str "-"))
-      (nil nil)
-    )))
+     ((string-match-p caseconv--pascal-case-pattern str) (caseconv--split-on-different-case str))
+     ((string-match-p caseconv--snake-case-pattern str) (split-string str "_"))
+     ((string-match-p caseconv--camel-case-pattern str) (caseconv--split-on-different-case str))
+     ((string-match-p caseconv--screaming-snake-case-pattern str) (split-string str "_"))
+     ((string-match-p caseconv--kebab-case-pattern str) (split-string str "-"))
+     ((string-match-p caseconv--screaming-kebab-case-pattern str) (split-string str "-"))
+     (nil nil))))
 
 (defun caseconv--bounds-of-word ()
+  "Return the bounds of the current word."
   (let* ((start (point))
-          (word (current-word))
-          (end (+ start (length word))))
-       (cons start end)))
+         (word (current-word))
+         (end (+ start (length word))))
+    (cons start end)))
 
 (defun caseconv--get-bounds-of-word ()
   "Gets bounds of THING at cursor."
@@ -102,7 +112,7 @@
 
 (defun caseconv-to-pascal-case (word)
   (let ((word-list (caseconv--determine-case word)))
-        (mapconcat 'capitalize word-list "")))
+    (mapconcat 'capitalize word-list "")))
 
 (defun caseconv-to-camel-case (word)
   (let ((word-list (caseconv--determine-case word)))
@@ -114,7 +124,7 @@
 
 (defun caseconv-to-kebab-case (word)
   (let ((word-list (caseconv--determine-case word)))
-  (mapconcat 'caseconv--lower-first word-list "-")))
+    (mapconcat 'caseconv--lower-first word-list "-")))
 
 (defun caseconv-to-screaming-snake-case (word)
   (upcase (caseconv-to-snake-case word)))
@@ -131,29 +141,13 @@
     (delete-region start end)
     (insert result)))
 
-(defun caseconv-point-or-region-to-pascal-case ()
+(defun caseconv-convert-point-or-region ()
+  "Converts the word in point or region to the selected case."
   (interactive)
-  (caseconv--point-or-region-to-case 'caseconv-to-pascal-case))
-
-(defun caseconv-point-or-region-to-camel-case ()
-  (interactive)
-  (caseconv--point-or-region-to-case 'caseconv-to-camel-case))
-
-(defun caseconv-point-or-region-to-snake-case ()
-  (interactive)
-  (caseconv--point-or-region-to-case 'caseconv-to-snake-case))
-
-(defun caseconv-point-or-region-to-screaming-snake-case ()
-  (interactive)
-  (caseconv--point-or-region-to-case 'caseconv-to-screaming-snake-case))
-
-(defun caseconv-point-or-region-to-kebab-case ()
-  (interactive)
-  (caseconv--point-or-region-to-case 'caseconv-to-kebab-case))
-
-(defun caseconv-point-or-region-to-screaming-kebab-case ()
-  (interactive)
-  (caseconv--point-or-region-to-case 'caseconv-to-screaming-kebab-case))
+  (let ((selection (ivy-read "Select case: " (mapcar
+                                              (lambda (e)
+                                                (car e)) caseconv--case-options))))
+    (caseconv--point-or-region-to-case (cdr (assoc selection caseconv--case-options)))))
 
 (provide 'caseconv)
 ;;; caseconv.el ends here
