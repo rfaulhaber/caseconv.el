@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
-(require 'caseconv "./caseconv.el")
+(load-file "caseconv.el")
 
 (ert-deftest split-splits-on-different-cases ()
   (let ((result (caseconv--split-on-different-case "fooBarBaz")))
