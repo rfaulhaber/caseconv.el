@@ -9,7 +9,7 @@
 ;; Version: 0.1.0
 ;; Keywords:
 ;; Homepage: https://github.com/rfaulhaber/caseconv
-;; Package-Requires: ((emacs "24.4") s subr-x)
+;; Package-Requires: ((emacs "24.4") s)
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 's)
-(require 'subr-x)
 
 (defgroup caseconv nil
   "Minor mode for changing cases"
