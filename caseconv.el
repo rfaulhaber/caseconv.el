@@ -150,31 +150,31 @@
 (defun caseconv-word-to-camel-case ()
   "Convert word at point or region to camelCase."
   (interactive)
-  (caseconv--word-to-case 'caseconv-to-camel-case))
+  (caseconv--point-or-region-to-case 'caseconv-to-camel-case))
 
 ;;;###autoload
 (defun caseconv-word-to-snake-case ()
   "Convert word at point or region to snake_case."
   (interactive)
-  (caseconv--word-to-case 'caseconv-to-snake-case))
+  (caseconv--point-or-region-to-case 'caseconv-to-snake-case))
 
 ;;;###autoload
 (defun caseconv-word-to-screaming-snake-case ()
   "Convert word at point or region to SCREAMING_SNAKE_CASE."
   (interactive)
-  (caseconv--word-to-case 'caseconv-to-screaming-snake-case))
+  (caseconv--point-or-region-to-case 'caseconv-to-screaming-snake-case))
 
 ;;;###autoload
 (defun caseconv-word-to-kebab-case ()
   "Convert word at point or region to kebab-case."
   (interactive)
-  (caseconv--word-to-case 'caseconv-to-kebab-case))
+  (caseconv--point-or-region-to-case 'caseconv-to-kebab-case))
 
 ;;;###autoload
 (defun caseconv-word-to-screaming-kebab-case ()
   "Convert word at point or region to SCREAMING-KEBAB-CASE."
   (interactive)
-  (caseconv--word-to-case 'caseconv-to-screaming-kebab-case))
+  (caseconv--point-or-region-to-case 'caseconv-to-screaming-kebab-case))
 
 ;;;###autoload
 (defun caseconv-convert-point-or-region ()
