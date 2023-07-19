@@ -1,12 +1,15 @@
-#+TITLE: caseconv.el
+#+TITLE: heckle
 
 An Emacs package providing functions to change word case.
 
-=caseconv= provides functions converting to and from:
+=heckle= provides functions converting to and from:
 
 - camelCase
 - PascalCase
 - snake_case
+- Upper_Snake_Case
 - kebab-case
 - SCREAMING_SNAKE_CASE
-- SCREAMING_KEBAB_CASE
+- SCREAMING-KEBAB-CASE
+
+Heckle is inspired by Rust's [[https://github.com/withoutboats/heck][heck]] library.
